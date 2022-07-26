@@ -4,6 +4,7 @@ import net.anotheria.anoplass.access.aop.AccessChecked;
 import net.anotheria.anoplass.access.aop.AccessCheckedAPI;
 import net.anotheria.anoplass.access.aop.AccessCheckedResult;
 import net.anotheria.anoplass.access.aop.annotation.AccessCheckOperation;
+import net.anotheria.anoplass.access.aop.exception.OperationDeniedException;
 import net.anotheria.anoplass.api.APIException;
 import net.anotheria.anoplass.api.APIFinder;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -39,95 +40,65 @@ public class AccessCheckAspect {
     public Object handleAccessCheckOperation(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
         logger.debug("handleAccessCheckOperation(pjp = [{}])", pjp);
 
-        switch (annotation.action()) {
-            case READ:
-                return accessCheckRead(pjp, annotation);
-            case SAVE:
-                return accessCheckSave(pjp, annotation);
-            case UPDATE:
-                return accessCheckUpdate(pjp, annotation);
-            case DELETE:
-                return accessCheckDelete(pjp, annotation);
-            default:
-                return pjp.proceed();
+        boolean before = annotation.before();
+        boolean after = annotation.after();
+        if (!before && !after) {
+            throw new OperationDeniedException("Before or/and After access check should be defined");
         }
-    }
 
-    /**
-     * Check read operation.
-     */
-    private Object accessCheckRead(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
+        if (before) {
+            accessCheckBefore(pjp, annotation);
+        }
+
         Object methodReturnObject = pjp.proceed();
 
-        AccessCheckedAPI accessCheckedAPI = APIFinder.findAPI(annotation.accessApi());
-        if (methodReturnObject instanceof AccessCheckedResult) {
-            AccessCheckedResult ret = (AccessCheckedResult) methodReturnObject;
-            checkReturnList(ret.getAccessCheckedList(), accessCheckedAPI);
-        } else
-        if (methodReturnObject instanceof List) {
-            checkReturnList((List) methodReturnObject, accessCheckedAPI);
-        } else {
-            checkReturnObject(methodReturnObject, accessCheckedAPI);
+        if (after) {
+            accessCheckAfter(methodReturnObject, annotation);
         }
 
         return methodReturnObject;
     }
 
     /**
-     * Check delete operation.
+     * Check before operation.
      */
-    private Object accessCheckDelete(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
-
-        Object arg = pjp.getArgs()[0];
+    private void accessCheckBefore(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
+        Object[] args = pjp.getArgs();
+        int action = annotation.action();
 
         AccessCheckedAPI accessCheckedAPI = APIFinder.findAPI(annotation.accessApi());
-        accessCheckedAPI.checkDeleteAccess(arg);
-
-        return pjp.proceed();
+        accessCheckedAPI.checkAccessBefore(args, action);
     }
 
     /**
-     * Check create/save operation.
+     * Check operation's result
      */
-    private Object accessCheckSave(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
-        Object arg = pjp.getArgs()[0];
-
-        if (arg instanceof AccessChecked) {
-            AccessCheckedAPI accessCheckedAPI = APIFinder.findAPI(annotation.accessApi());
-            AccessChecked accessChecked = (AccessChecked) arg;
-            accessCheckedAPI.checkSaveAccess(accessChecked);
+    private void accessCheckAfter(Object methodReturnObject, AccessCheckOperation annotation) throws Throwable {
+        AccessCheckedAPI accessCheckedAPI = APIFinder.findAPI(annotation.accessApi());
+        int action = annotation.action();
+        if (methodReturnObject instanceof AccessCheckedResult) {
+            AccessCheckedResult ret = (AccessCheckedResult) methodReturnObject;
+            checkReturnList(ret.getAccessCheckedList(), action, accessCheckedAPI);
+        } else
+        if (methodReturnObject instanceof List) {
+            checkReturnList((List) methodReturnObject, action, accessCheckedAPI);
+        } else {
+            checkReturnObject(methodReturnObject, action, accessCheckedAPI);
         }
-
-        return pjp.proceed();
     }
 
-    /**
-     * Check update operation.
-     */
-    private Object accessCheckUpdate(ProceedingJoinPoint pjp, AccessCheckOperation annotation) throws Throwable {
-        Object arg = pjp.getArgs()[0];
-
-        if (arg instanceof AccessChecked) {
-            AccessCheckedAPI accessCheckedAPI = APIFinder.findAPI(annotation.accessApi());
-            AccessChecked accessChecked = (AccessChecked) arg;
-            accessCheckedAPI.checkUpdateAccess(accessChecked);
-        }
-
-        return pjp.proceed();
-    }
-
-    private void checkReturnObject(Object obj, AccessCheckedAPI accessCheckedAPI) throws APIException {
-
+    private void checkReturnObject(Object obj, int action, AccessCheckedAPI accessCheckedAPI) throws APIException {
         if (obj instanceof AccessChecked) {
             AccessChecked accessChecked = (AccessChecked) obj;
-            accessCheckedAPI.checkReadAccess(accessChecked);
+            accessCheckedAPI.checkAccessAfter(accessChecked, action);
+            return;
         }
-
+        throw new OperationDeniedException("Object is not AccessChecked: " + obj.toString());
     }
 
-    private <T> void checkReturnList(List<T> list, AccessCheckedAPI accessCheckedAPI) throws APIException {
+    private <T> void checkReturnList(List<T> list, int action, AccessCheckedAPI accessCheckedAPI) throws APIException {
         for (T obj: list) {
-            checkReturnObject(obj, accessCheckedAPI);
+            checkReturnObject(obj, action, accessCheckedAPI);
         }
     }
 

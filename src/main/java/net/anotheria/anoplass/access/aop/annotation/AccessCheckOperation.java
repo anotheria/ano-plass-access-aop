@@ -1,7 +1,6 @@
 package net.anotheria.anoplass.access.aop.annotation;
 
 import net.anotheria.anoplass.access.aop.AccessCheckedAPI;
-import net.anotheria.anoplass.api.API;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,10 +17,23 @@ public @interface AccessCheckOperation {
     /**
      * Operation to be applied.
      */
-    AccessCheckAction action();
+    int action();
 
     /**
      * API's class for access check.
      */
     Class<? extends AccessCheckedAPI> accessApi();
+
+    /**
+     * Check access before operation
+     * before or/and after have to be true
+     */
+    boolean before() default false;
+
+    /**
+     * Check access to operation's result
+     * before or/and after have to be true
+     */
+    boolean after() default false;
+
 }
