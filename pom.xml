@@ -114,4 +114,10 @@
 			<version>${aspectj-version}</version>
 		</dependency>
 	</dependencies>
+    <scm>
+        <url>https://github.com/anotheria/ano-plass</url>
+        <connection>scm:git:git@github.com:anotheria/ano-plass.git</connection>
+        <developerConnection>scm:git:git@github.com:anotheria/ano-plass.git</developerConnection>
+    </scm>
+	
 </project>
