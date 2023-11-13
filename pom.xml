@@ -4,13 +4,13 @@
 	<parent>
 		<groupId>net.anotheria</groupId>
 		<artifactId>parent</artifactId>
-		<version>2.15</version>
+		<version>4.0-SNAPSHOT</version>
 	</parent>
 
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ano-plass-access-aop</artifactId>
-  	<version>2.2.1-SNAPSHOT</version>
+  	<version>4.0.0-SNAPSHOT</version>
     <name>ano object access aop</name>
 
 	<properties>
@@ -19,7 +19,7 @@
 		<aspectj-version>1.9.20</aspectj-version>
 		<aspectj-maven-plugin.version>1.14.0</aspectj-maven-plugin.version>
 		<aspectj-maven-plugin.complianceLevel>11</aspectj-maven-plugin.complianceLevel>
-		<ano-plass-version>3.0.0-SNAPSHOT</ano-plass-version>
+		<ano-plass-version>4.0.0-SNAPSHOT</ano-plass-version>
 	</properties>
 
 
